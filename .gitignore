@@ -1,0 +1,13 @@
+# temp dir
+**/__pycache__
+**/.vscode
+**/.idea
+**/cache
+
+# data
+**/data
+**/logs
+
+*.pyc
+*.env
+zoos.py
