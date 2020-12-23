@@ -113,10 +113,32 @@ class ModelBert(pl.LightningModule):
         self.val_set = MutilDataset(df_OCEMOTION.sample(2000), df_OCNLI.sample(2000), df_TNEWS.sample(2000), self.tokenizer)
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, batch_size=32, shuffle=True, num_workers=4)
+        return DataLoader(self.train_set, batch_size=self.params.batch_size, shuffle=True, num_workers=4)
 
     def val_dataloader(self):
-        return DataLoader(self.val_set, batch_size=32, shuffle=True, num_workers=4)
+        return DataLoader(self.val_set, batch_size=self.params.batch_size, shuffle=True, num_workers=4)
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, batch_size=32, shuffle=True, num_workers=4)
+        return DataLoader(self.test_set, batch_size=self.params.batch_size, shuffle=True, num_workers=4)
+
+
+if __name__ == '__main__':
+    from common import Config, train
+
+    conf = Config(
+        model_name='bert',
+
+        bert_pretrained=r'/Users/liuzhi/models/torch/bert-base-chinese',
+        model_saved_path=r'./',
+        log_path='./logs/',
+        data_path=r'/Users/liuzhi/datasets/tc_nlp_generalizer',
+        use_gpu=torch.cuda.is_available(),
+        epochs=10,
+        batch_size=16,
+        lr=2e-5,
+        classes_of_ocemotion=2,
+        classes_of_ocnli=3,
+        classes_of_tnews=15
+    )
+
+    train(conf, ModelBert)

@@ -4,6 +4,7 @@
 
 # ------------------------------------------------------------------------------
 import pandas as pd
+import torch
 from torch.utils import data
 
 
@@ -57,7 +58,7 @@ class MutilDataset(data.Dataset):
 
         encoding = {
             'text': text,
-            # 'label': torch.tensor(label, dtype=torch.long),
+            'label': torch.tensor(label, dtype=torch.long),
             'input_ids': (encoding['input_ids']).flatten(),
             'attention_mask': (encoding['attention_mask']).flatten(),
             'token_type_ids': (encoding['token_type_ids']).flatten()
