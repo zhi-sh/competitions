@@ -22,6 +22,7 @@ class ModelBert(pl.LightningModule):
         self.clf_ocemotion = nn.Linear(self.bert.config.hidden_size, params.classes_of_ocemotion)
         self.clf_ocnli = nn.Linear(self.bert.config.hidden_size, params.classes_of_ocnli)
         self.clf_tnews = nn.Linear(self.bert.config.hidden_size, params.classes_of_tnews)
+        self.loss_fc = nn.Linear()
 
         # --- Focal Loss
         self.loss_ocemotion = MultiFocalLoss(params.classes_of_ocemotion, alpha=[4068, 4347, 590, 8894, 4042, 12475, 899])

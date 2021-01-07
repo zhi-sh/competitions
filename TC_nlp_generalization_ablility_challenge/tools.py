@@ -3,9 +3,11 @@
 # @Author   :zhi.liu
 
 # ------------------------------------------------------------------------------
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 
 # 1. Focal Loss 处理数据不平衡问题
@@ -23,7 +25,7 @@ class MultiFocalLoss(nn.Module):
             self.alpha = torch.ones(self.num_class, 1)
         elif isinstance(self.alpha, (list, np.ndarray)):
             assert len(self.alpha) == self.num_class
-            self.alpha = torch.FloatTensor(alpha).view(self, num_class, -1)
+            self.alpha = torch.FloatTensor(alpha).view(self.num_class, -1)
             self.alpha = self.alpha / self.alpha.sum()
         elif isinstance(self.alpha, float):
             self.alpha = torch.ones(self.num_class, 1)
@@ -72,6 +74,23 @@ class MultiFocalLoss(nn.Module):
             loss = loss.sum()
 
         return loss
+
+
+class LBTW(nn.Module):
+    def __init__(self, alpha=0.5, num_tasks=3):
+        super(LBTW, self).__init__()
+        self.init_loss = torch.ones(num_tasks)
+        self.alpha = alpha
+
+    def forward(self, *losses, batch_idx=0):
+        batch_loss = torch.tensor(losses, device=losses[0].device)
+        if batch_idx == 0:
+            self.init_loss = batch_loss.detach()
+        weights = torch.pow(self.init_loss / batch_loss, self.alpha).detach()
+        weights /= torch.mean(weights)
+        weights *= 3
+
+        return losses[0] * weights[0], losses[1] * weights[1], losses[2] * weights[2]
 
 
 # 2. 对抗训练

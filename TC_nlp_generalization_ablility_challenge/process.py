@@ -3,6 +3,9 @@
 # @Author   :zhi.liu
 
 # ------------------------------------------------------------------------------
+import os
+import json
+import pandas as pd
 import pytorch_lightning as pl
 
 
@@ -46,20 +49,36 @@ def train(conf, module, data_module):
     trainer.test(ckpt_path=trainer.checkpoint_callback.best_model_path)
 
 
-def inverse_label(df, le_path):
-    import pickle
+def combine_pdfs(fpath, task_type):
+    def max_label(row):
+        items = row.tolist()[1:]
+        maxlabel = max(items, key=items.count)
+        return maxlabel
 
-    le = pickle.load(open(le_path, 'rb'))
-    y_inv = le.inverse_transform(df['label'])
-    df['target'] = y_inv
+    df_paths = [os.path.join(fpath, fn) for fn in os.listdir(fpath) if fn.startswith(f'infer_{task_type}')]
+    dfs = []
+    for df_path in df_paths:
+        df = pd.read_csv(df_path)
+        dfs.append(df[['id', 'label']])
+    if dfs:
+        comb = dfs[0]
+        for i in range(1, len(dfs)):
+            comb = pd.merge(comb, dfs[i], on='id', how='outer')
+        comb['max_label'] = comb.apply(max_label, axis=1)
+        return comb[['id', 'max_label']]
 
 
 def convert_prediction_to_json(conf):
-    import json
-    import pandas as pd
+    def inverse_label(df, le_path):
+        import pickle
+
+        le = pickle.load(open(le_path, 'rb'))
+        y_inv = le.inverse_transform(df['max_label'])
+        df['target'] = y_inv
+
     jobs = ['ocemotion', 'ocnli', 'tnews']
     for job in jobs:
-        df = pd.read_csv(f'{conf.data_path}/infer_{job}_0.csv')
+        df = combine_pdfs(conf.data_path, job)
         inverse_label(df, f'{conf.data_path}/lb_{job}.pkl')
         with open(f'{conf.data_path}/{job}_predict.json', 'w', encoding='utf-8') as fw:
             for ix, row in df.iterrows():
