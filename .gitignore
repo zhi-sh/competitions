@@ -7,7 +7,6 @@
 # data
 **/data
 **/logs
-**/zoos
 
 *.pyc
 *.env
